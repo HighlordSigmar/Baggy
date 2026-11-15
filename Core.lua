@@ -25,9 +25,14 @@ S.defaults = {
   bagColors = true,         -- tint empty slots of soul / herb / ammo bags
   reverse = false,
   showSearch = true,
+  moneyAllChars = true,     -- money tooltip with every character on the realm
+  bagBarPos = "top",        -- top | bottom
+  slotStyle = "blizzard",   -- blizzard | flat | flatclean
   colors = {
-    bg     = { 0.05, 0.05, 0.05, 0.85 },
-    border = { 0.55, 0.55, 0.55, 1 },
+    bg      = { 0.05, 0.05, 0.05, 0.85 },
+    border  = { 0.55, 0.55, 0.55, 1 },
+    slot    = { 0.12, 0.12, 0.12, 0.9 },   -- empty slots in the flat styles
+    keyring = { 1, 0.78, 0.3, 1 },         -- frame around keyring slots
   },
   frames = {
     inventory = { cols = 10, scale = 1, showBags = false, hidden = {} },

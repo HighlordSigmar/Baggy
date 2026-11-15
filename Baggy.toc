@@ -2,7 +2,7 @@
 ## Title: |cffd9a066Baggy
 ## Notes: All your bags in one window, plus your bank and your other characters' items. /baggy for options.
 ## Author: Made with Claude
-## Version: 1.0.0
+## Version: 1.1.0
 ## SavedVariables: BaggyDB
 
 Core.lua

@@ -9,6 +9,7 @@ local TITLE_H = 30
 local SEARCH_H = 24
 local BAGBAR_H = BAGSLOT + 8
 local BOTTOM_H = 26
+local GROUP_GAP = 6
 local MIN_W = 210
 
 local EMPTY_SLOT = "Interface\\PaperDoll\\UI-Backpack-EmptySlot"
@@ -213,6 +214,7 @@ local function CreateItemButton(f, parent)
   b.frame = f
   b.icon = getglobal(name .. "IconTexture")
   b.cooldown = getglobal(name .. "Cooldown")
+  b.normal = getglobal(name .. "NormalTexture")
 
   local glow = b:CreateTexture(nil, "OVERLAY")
   glow:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
@@ -231,13 +233,45 @@ local function CreateItemButton(f, parent)
   return b
 end
 
+local FLAT_BACKDROP = {
+  bgFile = "Interface\\Buttons\\WHITE8X8",
+  edgeFile = "Interface\\Buttons\\WHITE8X8",
+  edgeSize = 1,
+  insets = { left = 0, right = 0, top = 0, bottom = 0 },
+}
+
+-- switch a button between the Blizzard look and the flat looks
+local function ApplySlotStyle(b, style)
+  if b.style == style then return end
+  b.style = style
+  b.icon:ClearAllPoints()
+  if style == "blizzard" then
+    b:SetBackdrop(nil)
+    b.icon:SetAllPoints(b)
+    b.icon:SetTexCoord(0, 1, 0, 1)
+    if b.normal then b.normal:SetAlpha(1) end
+  else
+    b:SetBackdrop(FLAT_BACKDROP)
+    b.icon:SetPoint("TOPLEFT", b, "TOPLEFT", 1, -1)
+    b.icon:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -1, 1)
+    b.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    if b.normal then b.normal:SetAlpha(0) end
+  end
+end
+
 function S:UpdateItemButton(f, b, kind)
   local bag, slot = b.bag, b.slot
   local tex, count, locked, link = self:SlotInfo(f, bag, slot)
   b.link = link
   b.offline = not f.live
   local db = self.db
+  local style = db.slotStyle or "blizzard"
+  local flat = style ~= "blizzard"
+  local isKey = (kind == "keyring")
+  local kc = db.colors.keyring
+  ApplySlotStyle(b, style)
 
+  b.icon:SetAlpha(1)
   if tex then
     SetItemButtonTexture(b, tex)
     SetItemButtonCount(b, count or 1)
@@ -247,12 +281,49 @@ function S:UpdateItemButton(f, b, kind)
       SetItemButtonDesaturated(b, nil)
       b.icon:SetVertexColor(1, 1, 1)
     end
+  elseif isKey then
+    -- empty keyring slot: a faded key
+    SetItemButtonTexture(b, KEY_ICON)
+    SetItemButtonCount(b, 0)
+    SetItemButtonDesaturated(b, 1, 0.5, 0.5, 0.5)
+    b.icon:SetVertexColor(kc[1], kc[2], kc[3])
+    b.icon:SetAlpha(0.35)
   else
-    SetItemButtonTexture(b, EMPTY_SLOT)
     SetItemButtonCount(b, 0)
     SetItemButtonDesaturated(b, nil)
     local c = db.bagColors and kind and S.BAG_KIND_COLORS[kind]
-    if c then b.icon:SetVertexColor(c[1], c[2], c[3]) else b.icon:SetVertexColor(1, 1, 1) end
+    if flat then
+      SetItemButtonTexture(b, nil)
+    else
+      SetItemButtonTexture(b, EMPTY_SLOT)
+      if c then b.icon:SetVertexColor(c[1], c[2], c[3]) else b.icon:SetVertexColor(1, 1, 1) end
+    end
+  end
+
+  -- slot frame and background
+  if flat then
+    local sc = db.colors.slot
+    local c = db.bagColors and kind and not isKey and S.BAG_KIND_COLORS[kind]
+    if isKey then
+      b:SetBackdropColor(kc[1] * 0.25, kc[2] * 0.25, kc[3] * 0.25, sc[4])
+    elseif c then
+      b:SetBackdropColor(c[1] * 0.3, c[2] * 0.3, c[3] * 0.3, sc[4])
+    else
+      b:SetBackdropColor(sc[1], sc[2], sc[3], sc[4])
+    end
+    if isKey then
+      b:SetBackdropBorderColor(kc[1], kc[2], kc[3], kc[4])
+    elseif style == "flatclean" then
+      b:SetBackdropBorderColor(0, 0, 0, 0)
+    else
+      b:SetBackdropBorderColor(0, 0, 0, 1)
+    end
+  elseif b.normal then
+    if isKey then
+      b.normal:SetVertexColor(kc[1], kc[2], kc[3])
+    else
+      b.normal:SetVertexColor(1, 1, 1)
+    end
   end
 
   -- border by quality, or yellow for quest items
@@ -668,6 +739,7 @@ local function CreateWindow(kind)
   mfs:SetJustifyH("RIGHT")
   money.text = mfs
   money:SetScript("OnEnter", function()
+    if not S.db.moneyAllChars then return end
     GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT")
     GameTooltip:AddLine("Money on " .. S.realm)
     local total = 0
@@ -792,30 +864,36 @@ function S:Refresh(f)
   end
 
   local barW = 0
+  local barBottom = (db.bagBarPos == "bottom")
   if fdb.showBags then
-    f.bagBar:ClearAllPoints()
-    f.bagBar:SetPoint("TOPLEFT", f, "TOPLEFT", PAD, -top + 2)
     barW = self:UpdateBagBar(f)
     f.bagBar:Show()
-    top = top + BAGBAR_H
+    if not barBottom then
+      f.bagBar:ClearAllPoints()
+      f.bagBar:SetPoint("TOPLEFT", f, "TOPLEFT", PAD, -top + 2)
+      top = top + BAGBAR_H
+    end
   else
     f.bagBar:Hide()
   end
 
-  -- collect the slots to show
+  -- collect the slots to show: normal bags, then the keyring on its own rows
   local bags = self:FrameBags(f)
-  local list = {}
+  local groups = { {}, {} }
   local total, used = 0, 0
   for i = 1, table.getn(bags) do
     local bag = bags[i]
     local size = self:BagSize(f, bag)
     local bf = GetBagFrame(f, bag)
     local kind
-    if bag >= 1 then
+    if bag == S.KEYRING then
+      kind = "keyring"
+    elseif bag >= 1 then
       local _, _, k = self:BagItem(f, bag)
       kind = k
     end
     local hide = fdb.hidden[bag]
+    local group = (bag == S.KEYRING) and groups[2] or groups[1]
     for slot = 1, size do
       local b = bf.buttons[slot]
       if not b then
@@ -832,7 +910,7 @@ function S:Refresh(f)
       if hide then
         b:Hide()
       else
-        table.insert(list, b)
+        table.insert(group, b)
       end
     end
     for slot = size + 1, table.getn(bf.buttons) do bf.buttons[slot]:Hide() end
@@ -846,25 +924,48 @@ function S:Refresh(f)
     end
   end
 
-  -- lay them out
-  local n = table.getn(list)
-  for i = 1, n do
-    local b = list[db.reverse and (n - i + 1) or i]
-    local col = math.mod(i - 1, cols)
-    local row = math.floor((i - 1) / cols)
-    local x = PAD + col * (SLOT + spacing)
-    local y = -(top + row * (SLOT + spacing))
-    if b.px ~= x or b.py ~= y then
-      b:ClearAllPoints()
-      b:SetPoint("TOPLEFT", f, "TOPLEFT", x, y)
-      b.px, b.py = x, y
+  -- put the groups in order (reversed if asked)
+  local order = {}
+  if db.reverse then
+    for g = 2, 1, -1 do
+      local src, seq = groups[g], {}
+      for i = table.getn(src), 1, -1 do table.insert(seq, src[i]) end
+      if table.getn(seq) > 0 then table.insert(order, seq) end
     end
-    b:Show()
+  else
+    for g = 1, 2 do
+      if table.getn(groups[g]) > 0 then table.insert(order, groups[g]) end
+    end
+  end
+
+  -- lay them out, each group starting on a new row
+  local list = {}
+  local gy = 0
+  for gi = 1, table.getn(order) do
+    local seq = order[gi]
+    local count = table.getn(seq)
+    for i = 1, count do
+      local b = seq[i]
+      local col = math.mod(i - 1, cols)
+      local row = math.floor((i - 1) / cols)
+      local x = PAD + col * (SLOT + spacing)
+      local y = -(top + gy + row * (SLOT + spacing))
+      if b.px ~= x or b.py ~= y then
+        b:ClearAllPoints()
+        b:SetPoint("TOPLEFT", f, "TOPLEFT", x, y)
+        b.px, b.py = x, y
+      end
+      b:Show()
+      table.insert(list, b)
+    end
+    local rows = math.ceil(count / cols)
+    gy = gy + rows * SLOT + (rows - 1) * spacing
+    if gi < table.getn(order) then gy = gy + GROUP_GAP end
   end
   f.shown = list
+  local n = table.getn(list)
 
-  local rows = math.ceil(n / cols)
-  local gridH = rows * SLOT + math.max(rows - 1, 0) * spacing
+  local gridH = gy
   local width = PAD * 2 + cols * SLOT + (cols - 1) * spacing
   if width < MIN_W then width = MIN_W end
   if barW + PAD * 2 > width then width = barW + PAD * 2 end
@@ -884,8 +985,14 @@ function S:Refresh(f)
     f.emptyText:Hide()
   end
 
+  local height = top + gridH + BOTTOM_H
+  if fdb.showBags and barBottom then
+    f.bagBar:ClearAllPoints()
+    f.bagBar:SetPoint("TOPLEFT", f, "TOPLEFT", PAD, -(top + gridH + 6))
+    height = height + BAGBAR_H
+  end
   f:SetWidth(width)
-  f:SetHeight(top + gridH + BOTTOM_H)
+  f:SetHeight(height)
 
   -- title width: up to the first icon button
   local titleW = width - PAD - 2 - 26 - table.getn(f.icons) * 21 - 6

@@ -89,6 +89,33 @@ local function Slider(parent, label, key, minv, maxv, step, x, y)
   return s
 end
 
+local function Cycle(parent, label, key, options, x, y)
+  local b = CreateFrame("Button", NextName("Cycle"), parent, "UIPanelButtonTemplate")
+  b:SetWidth(250); b:SetHeight(22)
+  b:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+  b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  local function index()
+    for i = 1, table.getn(options) do
+      if options[i][1] == Get(key) then return i end
+    end
+    return 1
+  end
+  local function refresh() b:SetText(label .. ": " .. options[index()][2]) end
+  b:SetScript("OnClick", function()
+    local i, n = index(), table.getn(options)
+    if arg1 == "RightButton" then
+      i = i - 1; if i < 1 then i = n end
+    else
+      i = i + 1; if i > n then i = 1 end
+    end
+    Set(key, options[i][1])
+    refresh()
+    S:ApplyAll()
+  end)
+  table.insert(refreshers, refresh)
+  return b
+end
+
 local function Button(parent, label, x, y, width, onClick)
   local b = CreateFrame("Button", NextName("Button"), parent, "UIPanelButtonTemplate")
   b:SetWidth(width or 120); b:SetHeight(22)
@@ -155,7 +182,7 @@ end
 
 local function Build()
   panel = CreateFrame("Frame", "BaggyOptions", UIParent)
-  panel:SetWidth(600); panel:SetHeight(500)
+  panel:SetWidth(600); panel:SetHeight(570)
   panel:SetPoint("CENTER", UIParent, "CENTER", 0, 30)
   panel:SetFrameStrata("HIGH")
   panel:SetToplevel(true)
@@ -194,20 +221,21 @@ local function Build()
   Header(panel, "Tooltips", L, -254)
   Check(panel, "Item counts for all your characters", "tooltipCounts", L, -274)
   Check(panel, "Total line when more than one has it", "tooltipTotal", L, -296)
+  Check(panel, "All characters' money when hovering gold", "moneyAllChars", L, -318)
 
-  Header(panel, "Reset", L, -330)
-  Button(panel, "Reset positions", L, -352, 125, function()
+  Header(panel, "Reset", L, -352)
+  Button(panel, "Reset positions", L, -374, 125, function()
     S.db.frames.inventory.pos = nil
     S.db.frames.bank.pos = nil
     S:ApplyAll()
   end)
-  Button(panel, "Reset everything", L + 135, -352, 125, function()
+  Button(panel, "Reset everything", L + 135, -374, 125, function()
     S:ResetSettings()
     S.Print("all settings reset to defaults.")
   end)
 
   local help = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  help:SetPoint("TOPLEFT", panel, "TOPLEFT", L, -388)
+  help:SetPoint("TOPLEFT", panel, "TOPLEFT", L, -410)
   help:SetWidth(262)
   help:SetJustifyH("LEFT")
   help:SetText("Click a window's title to see another character's bags or bank. " ..
@@ -223,16 +251,24 @@ local function Build()
   Slider(panel, "Slot spacing", "spacing", 0, 10, 1, R + 6, -232)
 
   Header(panel, "Look", R, -264)
-  Check(panel, "Search box", "showSearch", R, -284)
-  Check(panel, "Quality borders (green and better)", "qualityGlow", R, -306)
-  Check(panel, "Grey border on junk", "glowPoor", R, -328)
-  Check(panel, "Yellow border on quest items", "questGlow", R, -350)
-  Check(panel, "Tint soul, herb and ammo bag slots", "bagColors", R, -372)
-  Check(panel, "Reverse slot order", "reverse", R, -394)
+  Cycle(panel, "Bag bar", "bagBarPos", {
+    { "top", "Top" }, { "bottom", "Bottom" },
+  }, R, -284)
+  Cycle(panel, "Slots", "slotStyle", {
+    { "blizzard", "Blizzard" }, { "flat", "Flat" }, { "flatclean", "Flat, no borders" },
+  }, R, -310)
+  Check(panel, "Search box", "showSearch", R, -336)
+  Check(panel, "Quality borders (green and better)", "qualityGlow", R, -358)
+  Check(panel, "Grey border on junk", "glowPoor", R, -380)
+  Check(panel, "Yellow border on quest items", "questGlow", R, -402)
+  Check(panel, "Tint soul, herb and ammo bag slots", "bagColors", R, -424)
+  Check(panel, "Reverse slot order", "reverse", R, -446)
 
-  Header(panel, "Colors", R, -428)
-  Swatch(panel, "Background", "bg", R, -450)
-  Swatch(panel, "Border", "border", R + 130, -450)
+  Header(panel, "Colors", R, -478)
+  Swatch(panel, "Background", "bg", R, -500)
+  Swatch(panel, "Border", "border", R + 130, -500)
+  Swatch(panel, "Slots (flat)", "slot", R, -522)
+  Swatch(panel, "Keyring slots", "keyring", R + 130, -522)
 
   panel:SetScript("OnShow", function() S:RefreshOptions() end)
   panel:Hide()

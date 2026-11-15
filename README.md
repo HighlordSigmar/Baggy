@@ -16,6 +16,7 @@ Put the `Baggy` folder in `Interface\AddOns\`. Turn off any other bag addon (Bag
 - **Bag bar** (bag icon), at the top or bottom of the window: click a bag to hide or show its slots, hover it to highlight its items, drag bags in and out. At a banker, click the red slot to buy the next bank bag slot
 - **Search box**: dims everything that doesn't match by name, type or subtype (`cloth`, `potion`, `armor`, `recipe`...)
 - **Other characters**: click a window's title to see any character's bags or bank on this realm. Each character is saved when you log in on it, and its bank is saved when you visit a banker. You can open your bank anywhere with the chest button on the bags window
+- **Search all characters** (spyglass button on the bags window, `/baggy find <text>`, or press Enter in a bag search box): lists every matching item across all your characters' bags, banks and gear on the realm, with how many each one has. Hover a result for the full tooltip, shift-click to link it
 - **Item counts in tooltips**: every item tooltip shows how many each character has, split into bags, bank and equipped, with a total
 - **Money**: hover the gold at the bottom right to see every character's money and the realm total (can be turned off)
 - **Sort** (bag button): stacks partial stacks and sorts your normal bags (Hearthstone first, then gear, consumables, trade goods... junk last). Special bags (soul, herb, ammo) are left alone. Sort the bank while at a banker
@@ -25,4 +26,4 @@ Put the `Baggy` folder in `Interface\AddOns\`. Turn off any other bag addon (Bag
 - Opens itself at vendors, the mailbox, the auction house and when trading, and closes again afterwards if it opened itself. Each can be turned off
 
 ## Commands
-`/baggy` options · `/baggy bags` · `/baggy bank` · `/baggy sort` · `/baggy sortbank` · `/baggy keyring` · `/baggy lock` · `/baggy unlock` · `/baggy resetpos` · `/baggy forget <name>` · `/baggy reset`
+`/baggy` options · `/baggy bags` · `/baggy bank` · `/baggy sort` · `/baggy sortbank` · `/baggy find <text>` · `/baggy keyring` · `/baggy lock` · `/baggy unlock` · `/baggy resetpos` · `/baggy forget <name>` · `/baggy reset`

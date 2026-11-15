@@ -10,7 +10,7 @@ local SEARCH_H = 24
 local BAGBAR_H = BAGSLOT + 8
 local BOTTOM_H = 26
 local GROUP_GAP = 6
-local MIN_W = 210
+local MIN_W = 230
 
 local EMPTY_SLOT = "Interface\\PaperDoll\\UI-Backpack-EmptySlot"
 local EMPTY_BAG = "Interface\\PaperDoll\\UI-PaperDoll-Slot-Bag"
@@ -673,6 +673,12 @@ local function CreateWindow(kind)
     function() GameTooltip:SetText("Options") end), 0)
 
   if kind == "inventory" then
+    add(IconButton(f, "Interface\\Icons\\INV_Misc_Spyglass_02",
+      function() S:ToggleFind() end,
+      function()
+        GameTooltip:SetText("Search all characters")
+        GameTooltip:AddLine("Find an item in every character's bags, bank and gear", 0.6, 0.6, 0.6)
+      end))
     add(IconButton(f, BANK_ICON,
       function() S:Toggle("bank") end,
       function()
@@ -719,7 +725,11 @@ local function CreateWindow(kind)
     S:UpdateSearch(fr)
   end)
   search:SetScript("OnEscapePressed", function() this:SetText(""); this:ClearFocus() end)
-  search:SetScript("OnEnterPressed", function() this:ClearFocus() end)
+  search:SetScript("OnEnterPressed", function()
+    this:ClearFocus()
+    local text = this:GetText() or ""
+    if S.db.enterSearchAll and text ~= "" then S:OpenFind(text) end
+  end)
   f.search = search
 
   -- bag bar
@@ -1010,6 +1020,7 @@ function S:RefreshShown()
   for _, f in pairs(self.frames) do
     if f:IsShown() then self:Refresh(f) end
   end
+  if self.RefreshFind then self:RefreshFind() end
 end
 
 function S:ApplyAll()

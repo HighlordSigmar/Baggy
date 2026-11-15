@@ -25,6 +25,7 @@ S.defaults = {
   bagColors = true,         -- tint empty slots of soul / herb / ammo bags
   reverse = false,
   showSearch = true,
+  enterSearchAll = true,    -- Enter in a bag search box searches every character
   moneyAllChars = true,     -- money tooltip with every character on the realm
   bagBarPos = "top",        -- top | bottom
   slotStyle = "blizzard",   -- blizzard | flat | flatclean
@@ -532,6 +533,8 @@ SlashCmdList["BAGGY"] = function(msg)
     S:Sort("inventory")
   elseif cmd == "sortbank" then
     S:Sort("bank")
+  elseif cmd == "find" or cmd == "search" then
+    if rest ~= "" then S:OpenFind(rest) else S:ToggleFind() end
   elseif cmd == "keyring" then
     S:ToggleKeyring()
   elseif cmd == "lock" then
@@ -552,6 +555,7 @@ SlashCmdList["BAGGY"] = function(msg)
     Print("commands:")
     Print("/baggy - options    /baggy bags - toggle bags    /baggy bank - toggle bank")
     Print("/baggy sort - sort bags    /baggy sortbank - sort bank (at a banker)")
+    Print("/baggy find <text> - search every character's bags, bank and gear")
     Print("/baggy keyring    /baggy lock | unlock    /baggy resetpos")
     Print("/baggy forget <name> - delete a character's saved items    /baggy reset")
   end

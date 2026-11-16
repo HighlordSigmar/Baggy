@@ -934,18 +934,18 @@ function S:Refresh(f)
     end
   end
 
-  -- put the groups in order (reversed if asked)
+  -- put the groups in order: keyring above or below the bags,
+  -- slots inside each group reversed if asked
   local order = {}
-  if db.reverse then
-    for g = 2, 1, -1 do
-      local src, seq = groups[g], {}
+  local groupOrder = (db.keyringPos == "top") and { 2, 1 } or { 1, 2 }
+  for k = 1, 2 do
+    local src = groups[groupOrder[k]]
+    local seq = src
+    if db.reverse then
+      seq = {}
       for i = table.getn(src), 1, -1 do table.insert(seq, src[i]) end
-      if table.getn(seq) > 0 then table.insert(order, seq) end
     end
-  else
-    for g = 1, 2 do
-      if table.getn(groups[g]) > 0 then table.insert(order, groups[g]) end
-    end
+    if table.getn(seq) > 0 then table.insert(order, seq) end
   end
 
   -- lay them out, each group starting on a new row

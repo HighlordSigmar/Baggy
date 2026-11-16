@@ -21,7 +21,7 @@ Put the `Baggy` folder in `Interface\AddOns\`. Turn off any other bag addon (Bag
 - **Money**: hover the gold at the bottom right to see every character's money and the realm total (can be turned off)
 - **Sort** (bag button): stacks partial stacks and sorts your normal bags (Hearthstone first, then gear, consumables, trade goods... junk last). Special bags (soul, herb, ammo) are left alone. Sort the bank while at a banker
 - Quality borders, yellow borders on quest items, tinted empty slots in soul / herb / ammo bags
-- Keyring can be shown inside the bags window (your keyring button toggles it). Its slots sit on their own row with a gold frame and a faded key in empty slots
+- Keyring can be shown inside the bags window (your keyring button toggles it). Its slots sit on their own rows, above or below your bags, with a gold frame and a faded key in empty slots
 - **Slot style**: Blizzard, Flat, or Flat without borders, with your own color for flat slots and for the keyring frame
 - Opens itself at vendors, the mailbox, the auction house and when trading, and closes again afterwards if it opened itself. Each can be turned off
 

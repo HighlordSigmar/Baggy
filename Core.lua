@@ -28,6 +28,7 @@ S.defaults = {
   enterSearchAll = true,    -- Enter in a bag search box searches every character
   moneyAllChars = true,     -- money tooltip with every character on the realm
   bagBarPos = "top",        -- top | bottom
+  keyringPos = "bottom",    -- keyring rows above or below the bag slots
   slotStyle = "blizzard",   -- blizzard | flat | flatclean
   colors = {
     bg      = { 0.05, 0.05, 0.05, 0.85 },

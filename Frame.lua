@@ -31,10 +31,12 @@ local INFO = {
 -- small row of number + coin texture pairs.
 
 
-local COINS = {
-  "Interface\\MoneyFrame\\UI-GoldIcon",
-  "Interface\\MoneyFrame\\UI-SilverIcon",
-  "Interface\\MoneyFrame\\UI-CopperIcon",
+-- 1.12 keeps all three coins side by side in one texture
+local COIN_TEXTURE = "Interface\\MoneyFrame\\UI-MoneyIcons"
+local COIN_COORDS = {
+  { 0, 0.25, 0, 1 },      -- gold
+  { 0.25, 0.5, 0, 1 },    -- silver
+  { 0.5, 0.75, 0, 1 },    -- copper
 }
 local ICON = 13
 
@@ -49,7 +51,8 @@ function S:CreateCoins(parent, font)
     fs:SetJustifyH("RIGHT")
     local tex = c:CreateTexture(nil, "ARTWORK")
     tex:SetWidth(ICON); tex:SetHeight(ICON)
-    tex:SetTexture(COINS[i])
+    tex:SetTexture(COIN_TEXTURE)
+    tex:SetTexCoord(COIN_COORDS[i][1], COIN_COORDS[i][2], COIN_COORDS[i][3], COIN_COORDS[i][4])
     c.parts[i] = { text = fs, icon = tex }
   end
   return c

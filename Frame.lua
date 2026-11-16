@@ -379,10 +379,14 @@ end
 -- bag bar
 ----------------------------------------------------------------------
 StaticPopupDialogs["BAGGY_BUY_BANK_SLOT"] = {
-  text = "Buy a new bank bag slot for %s?",
+  text = "Buy a new bank bag slot?",
   button1 = YES or "Yes",
   button2 = NO or "No",
   OnAccept = function() PurchaseSlot() end,
+  OnShow = function()
+    MoneyFrame_Update(this:GetName() .. "MoneyFrame", GetBankSlotCost(GetNumBankSlots()))
+  end,
+  hasMoneyFrame = 1,
   timeout = 0,
   hideOnEscape = 1,
 }
@@ -396,7 +400,7 @@ local function BagSlotOnClick()
   end
   if this.locked then
     if this.purchasable and f.live then
-      StaticPopup_Show("BAGGY_BUY_BANK_SLOT", S.FormatMoney(GetBankSlotCost(GetNumBankSlots())))
+      StaticPopup_Show("BAGGY_BUY_BANK_SLOT")
     end
     return
   end
@@ -431,8 +435,8 @@ local function BagSlotOnEnter()
   elseif this.locked then
     GameTooltip:SetText(BANK_BAG_PURCHASE or "Purchasable bag slot")
     if this.purchasable and f.live then
-      GameTooltip:AddLine("Cost: " .. S.FormatMoney(GetBankSlotCost(GetNumBankSlots())), 1, 1, 1)
       GameTooltip:AddLine("Click to buy", 0.6, 0.6, 0.6)
+      SetTooltipMoney(GameTooltip, GetBankSlotCost(GetNumBankSlots()))
     elseif this.purchasable then
       GameTooltip:AddLine("Visit a banker to buy it", 0.6, 0.6, 0.6)
     end
@@ -744,29 +748,12 @@ local function CreateWindow(kind)
   local money = CreateFrame("Button", nil, f)
   money:SetHeight(16); money:SetWidth(150)
   money:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -PAD - 2, 8)
-  local mfs = money:CreateFontString(nil, "ARTWORK", "NumberFontNormal")
-  mfs:SetPoint("RIGHT", money, "RIGHT", 0, 0)
-  mfs:SetJustifyH("RIGHT")
-  money.text = mfs
+  money.coins = S:CreateCoins(money)
+  money.coins:SetPoint("RIGHT", money, "RIGHT", 0, 0)
   money:SetScript("OnEnter", function()
-    if not S.db.moneyAllChars then return end
-    GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT")
-    GameTooltip:AddLine("Money on " .. S.realm)
-    local total = 0
-    local names = S:CharNames()
-    for i = 1, table.getn(names) do
-      local d = S:CharData(names[i])
-      local m = d and d.money or 0
-      total = total + m
-      GameTooltip:AddDoubleLine(S.ClassColored(names[i], d and d.class), S.FormatMoney(m), 1, 1, 1, 1, 1, 1)
-    end
-    if table.getn(names) > 1 then
-      GameTooltip:AddLine(" ")
-      GameTooltip:AddDoubleLine("Total", S.FormatMoney(total), 1, 0.82, 0, 1, 1, 1)
-    end
-    GameTooltip:Show()
+    if S.db.moneyAllChars then S:ShowMoneyTip(this) end
   end)
-  money:SetScript("OnLeave", function() GameTooltip:Hide() end)
+  money:SetScript("OnLeave", function() S:HideMoneyTip() end)
   f.money = money
 
   local empty = f:CreateFontString(nil, "ARTWORK", "GameFontDisable")
@@ -1011,7 +998,7 @@ function S:Refresh(f)
   f.title.text:SetWidth(titleW)
 
   f.freeText:SetText(string.format("%d/%d", used, total))
-  f.money.text:SetText(S.FormatMoney(d and d.money or 0))
+  S:SetCoins(f.money.coins, d and d.money or 0)
 
   self:UpdateSearch(f)
 end

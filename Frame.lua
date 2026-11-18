@@ -516,6 +516,14 @@ function S:UpdateItemButton(f, b, kind)
     end
   end
 
+
+  -- the mouse is over this slot: show the tooltip of what's in it now
+  if GameTooltip:IsOwned(b) then
+    local old = this
+    this = b
+    ItemOnEnter()
+    this = old
+  end
   return tex ~= nil
 end
 

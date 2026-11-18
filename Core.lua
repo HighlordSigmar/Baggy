@@ -129,9 +129,19 @@ function S:IsBankBag(bag)
 end
 
 -- inventory slot holding the bag itself (nil for backpack, bank, keyring)
+-- 1.12 layout: 0-19 gear, 20-23 bags, 24-39 backpack, 40-63 bank slots,
+-- 64-69 bank bags
+local FIRST_BANK_BAG_SLOT = 64
+
 function S:BagInvSlot(bag)
   if bag >= 1 and bag <= 4 then return ContainerIDToInventoryID(bag) end
-  if bag >= 5 and bag <= 10 then return BankButtonIDToInvSlotID(bag - 4, 1) end
+  if bag >= 5 and bag <= 10 then
+    local ok, id = pcall(ContainerIDToInventoryID, bag)
+    if not ok then id = nil end
+    -- never mistake a bank item slot (40-63) for a bank bag slot
+    if id and id >= FIRST_BANK_BAG_SLOT then return id end
+    return FIRST_BANK_BAG_SLOT + bag - 5
+  end
   return nil
 end
 

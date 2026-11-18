@@ -418,6 +418,27 @@ function S:Queue(bag)
   updater:Show()
 end
 
+-- a second look shortly after things settle: some changes (equipping an
+-- item from a bag) reach the bag contents after the events about them
+local recheckAt = 0
+local recheck = CreateFrame("Frame")
+recheck:Hide()
+recheck:SetScript("OnUpdate", function()
+  if GetTime() < recheckAt then return end
+  this:Hide()
+  for bag = 0, 4 do S:Queue(bag) end
+  S:Queue(S.KEYRING)
+  if S.atBank then
+    S:Queue(-1)
+    for bag = 5, 10 do S:Queue(bag) end
+  end
+end)
+
+function S:Recheck(delay)
+  recheckAt = GetTime() + (delay or 0.4)
+  recheck:Show()
+end
+
 function S:QueueOpen()
   pendingOpen = true
   updater:Show()
@@ -481,7 +502,11 @@ ev:SetScript("OnEvent", function()
 
   if event == "BAG_UPDATE" then
     if S:IsInventoryBag(arg1) or (S.atBank and S:IsBankBag(arg1)) then S:Queue(arg1) end
-  elseif event == "ITEM_LOCK_CHANGED" or event == "BAG_UPDATE_COOLDOWN" then
+    S:Recheck()
+  elseif event == "ITEM_LOCK_CHANGED" then
+    S:Queue()
+    S:Recheck()
+  elseif event == "BAG_UPDATE_COOLDOWN" then
     S:Queue()
   elseif event == "PLAYERBANKSLOTS_CHANGED" then
     if S.atBank then S:Queue(-1) end
@@ -500,7 +525,8 @@ ev:SetScript("OnEvent", function()
   elseif event == "UNIT_INVENTORY_CHANGED" then
     if arg1 == "player" then
       S:ScanEquipment()
-      for bag = 1, 4 do S:Queue(bag) end
+      for bag = 0, 4 do S:Queue(bag) end
+      S:Recheck()
     end
   elseif event == "MAIL_SHOW" then
     if S.db.openMail then S:QueueOpen() end

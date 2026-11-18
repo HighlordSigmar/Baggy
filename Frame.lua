@@ -354,11 +354,13 @@ local function ItemOnClick()
     return
   end
   ContainerFrameItemButton_OnClick(arg1)
+  S:Recheck()
 end
 
 local function ItemOnDrag()
   if this.offline then return end
   ContainerFrameItemButton_OnClick("LeftButton", 1)
+  S:Recheck()
 end
 
 local function CreateItemButton(f, parent)
